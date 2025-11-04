@@ -14,7 +14,8 @@ export default function BirthdayPortal() {
   // 🎵 Birthday track (place in public/assets/happy-birthday.mp3)
   useEffect(() => {
     const s = new Howl({
-      src: ["/assets/happy-birthday.mp3"],
+      src: [`${import.meta.env.BASE_URL}assets/happy-birthday.mp3`],
+
       volume: 0.55,
       preload: true,
       html5: true,
