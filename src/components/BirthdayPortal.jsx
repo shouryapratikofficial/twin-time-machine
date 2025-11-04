@@ -3,50 +3,34 @@ import confetti from "canvas-confetti";
 import { Howl } from "howler";
 import LottiePlayer from "./LottiePlayer";
 import birthdayAnim from "../assets/lotties/birthday.json";
-import { useBeat } from "./BeatPulseProvider"; // ✅ import GOT beat context
+import { useBeat } from "./BeatPulseProvider"; // ✅ import beat context
 
 export default function BirthdayPortal() {
   const [opened, setOpened] = useState(false);
   const canvasRef = useRef(null);
-  const { stopBeat } = useBeat(); // 🛑 Stop GOT flute background
+  const { stopBeat, resumeBeat } = useBeat(); // ✅ both controls
   const [birthdaySound, setBirthdaySound] = useState(null);
 
   // 🎵 Birthday track (place in public/assets/happy-birthday.mp3)
   useEffect(() => {
     const s = new Howl({
       src: [`${import.meta.env.BASE_URL}assets/happy-birthday.mp3`],
-
       volume: 0.55,
       preload: true,
       html5: true,
       onend: () => console.log("🎶 Birthday song ended"),
     });
     setBirthdaySound(s);
-
-    return () => {
-      s.unload(); // cleanup sound when component unmounts
-    };
+    return () => s.unload();
   }, []);
 
   // 🎉 Confetti burst logic
   const shootConfetti = () => {
     const duration = 2500;
     const end = Date.now() + duration;
-
     (function frame() {
-      confetti({
-        particleCount: 6,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-      });
-      confetti({
-        particleCount: 6,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-      });
-
+      confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 } });
       if (Date.now() < end) requestAnimationFrame(frame);
     })();
   };
@@ -62,15 +46,15 @@ export default function BirthdayPortal() {
     }, 300);
   };
 
-  // 🚪 Close portal → stop birthday sound (and optionally resume GOT)
+  // 🚪 Close portal → stop birthday sound + resume GOT
   const closePortal = () => {
     setOpened(false);
     if (birthdaySound) {
-      birthdaySound.stop(); // 🔇 stop birthday track immediately
+      birthdaySound.stop();
     }
-
-    // 🧠 Optional: if you want GOT theme to resume after closing, uncomment below:
-    // window.dispatchEvent(new Event("pointerdown"));
+    setTimeout(() => {
+      resumeBeat(); // 🎵 resume beat pulse and GOT sound
+    }, 600);
   };
 
   // 🎇 Glow pulse canvas
@@ -79,7 +63,6 @@ export default function BirthdayPortal() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     let frame = 0;
-
     function glow() {
       frame++;
       const alpha = 0.25 + Math.sin(frame / 15) * 0.25;
@@ -94,7 +77,7 @@ export default function BirthdayPortal() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen relative bg-linear-to-b from-amber-100 via-rose-50 to-white overflow-hidden">
+    <div className="flex flex-col items-center justify-center h-screen relative bg-gradient-to-b from-amber-100 via-rose-50 to-white overflow-hidden">
       {/* 🎬 Birthday animation */}
       <LottiePlayer src={birthdayAnim} className="w-64 h-64" />
 
@@ -109,7 +92,7 @@ export default function BirthdayPortal() {
       {/* 🎂 Button */}
       <button
         onClick={openPortal}
-        className="mt-6 px-8 py-3 bg-linear-to-r from-pink-500 to-purple-500 text-white text-xl font-semibold rounded-2xl shadow-xl hover:scale-105 transition-transform"
+        className="mt-6 px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xl font-semibold rounded-2xl shadow-xl hover:scale-105 transition-transform"
       >
         🎂 Open Your Message
       </button>
@@ -124,9 +107,7 @@ export default function BirthdayPortal() {
             <p className="text-lg text-gray-700 mb-4 leading-relaxed">
               You’ve time-traveled through every laugh, chaos, and memory.
               <br />
-              No matter how far apart you are —
-              <br />
-              your twin code is eternal 🧬💫
+              No matter how far apart you are — your twin code is eternal 🧬💫
             </p>
             <button
               onClick={closePortal}
